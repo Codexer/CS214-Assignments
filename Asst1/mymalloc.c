@@ -2,45 +2,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "mymalloc.h"
+
 #define BLOCK_SIZE 15000
 #define HEADER_SIZE 2
 
-#define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
-#define free( x ) myfree( x, __FILE__, __LINE__ )
+// #define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
+// #define free( x ) myfree( x, __FILE__, __LINE__ )
 
 // Extra 2 to keep track of first free pointer (may not be at beginning)
 static char myblock[BLOCK_SIZE + HEADER_SIZE];
 static const uint16_t NULL_VALUE = BLOCK_SIZE + 1;
-
-typedef enum Bool {
-	FALSE = 0,
-	TRUE = 1
-} bool;
-
-typedef enum Type {
-	FREE = FALSE,
-	USED = TRUE
-} block_type;
-
-void setIndexToValue(uint16_t index, uint16_t value);
-uint16_t getValueFromIndex(uint16_t index);
-void *getActualPointer(uint16_t pos);
-void addBlock(uint16_t pos, uint16_t newSize, bool isFree);
-uint16_t getLength(uint16_t pos);
-uint16_t getSize(uint16_t pos);
-bool isType(uint16_t pos, bool type);
-uint16_t getNextBlock(uint16_t currPos);
-uint16_t getNextBlockOfType(uint16_t currPos, bool type);
-uint16_t getStartAddress();
-void setStartAddress(uint16_t newPos);
-void printError(char *str, char *fileName, int lineNum);
-void mymallocInit();
-void *mymalloc(int size, char *fileName, int lineNum);
-void coalesce();
-void myfree(void *ptr, char *fileName, int lineNum);
-void DEBUG_printBlocksInList(int numBlocks, int startPos);
-void DEBUG_printBlockSection(int start, int len);
-void DEBUG_printStart();
 
 void setIndexToValue(uint16_t index, uint16_t value) {
 	*(uint16_t *)(&myblock[index]) = value;
@@ -54,7 +26,7 @@ void *getActualPointer(uint16_t pos) {
 	return &myblock[pos + HEADER_SIZE];
 }
 
-void addBlock(uint16_t pos, uint16_t newSize, bool isFree) {
+void addBlock(uint16_t pos, uint16_t newSize, block_type isFree) {
 	setIndexToValue(pos, (newSize + HEADER_SIZE) + (isFree << 15));
 }
 
@@ -66,7 +38,7 @@ uint16_t getSize(uint16_t pos) {
 	return getLength(pos) - HEADER_SIZE;
 }
 
-bool isType(uint16_t pos, bool type) {
+bool isType(uint16_t pos, block_type type) {
 	return ((getValueFromIndex(pos) >> 15) & 1) == type;
 }
 
@@ -74,7 +46,7 @@ uint16_t getNextBlock(uint16_t currPos) {
 	return (currPos + getLength(currPos)) % BLOCK_SIZE;
 }
 
-uint16_t getNextBlockOfType(uint16_t currPos, bool type) {
+uint16_t getNextBlockOfType(uint16_t currPos, block_type type) {
 	do {
 		currPos = getNextBlock(currPos);
 	} while(!isType(currPos, type));
@@ -181,6 +153,9 @@ void myfree(void *ptr, char *fileName, int lineNum) {
 
 	if (isType(currPos, USED)) {
 		addBlock(freePos, getSize(freePos), FREE);
+		if (freePos < getStartAddress()) {
+			setStartAddress(freePos);
+		}
 		coalesce();
 	} else {
 		printError("That address was not allocated by mymalloc.", fileName, lineNum);
@@ -215,7 +190,7 @@ void DEBUG_printStart() {
 	DEBUG_printBlockSection(0, 50);
 }
 
-int main() {
+/*int main() {
 	mymallocInit();
 
 	int x = 8;
@@ -232,4 +207,4 @@ int main() {
 	void *ptr = malloc(1);
 	free(ptr);
 	DEBUG_printBlocksInList(5, 0);
-}
+}*/
