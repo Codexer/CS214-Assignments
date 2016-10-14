@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "mymalloc.h"
 
@@ -12,7 +13,7 @@ int main()
 {
 	mymallocInit();
 	printf("Init complete\n");
-	double avg = 0;
+	long int avg = 0;
 	int j = 0;
 
 	/* test 1 */
@@ -22,25 +23,26 @@ int main()
 	int i = 0;
 	while(j < 100) {
 		printf("%d     ", j);
-		clock_t begin = clock();
+		struct timeval start, end;
+		gettimeofday(&start, NULL);
 		i = 0;
 		while(i < 3000) {
 			temp1[i] = malloc(1);
 			i++;
 		}
-		printf("Done malloc\n");
 		i = 0;
 		while(i < 3000) {
 			free(temp1[i]);
 			i++;
 		}
-		clock_t end = clock();
-		avg += (double)(end - begin);
+		long int t = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
+		printf("Time : %ld\n", t);
+    	avg += t;
 		j++;
 	}
 	avg /= 100;
 
-	printf("Test 1 successful!\nAverage time: %f sec\n\n", avg);
+	printf("Test 1 successful!\nAverage time: %ld sec\n\n", avg);
 
 
 	return 0;
