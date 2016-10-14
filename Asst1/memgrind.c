@@ -5,9 +5,9 @@
 
 #include "mymalloc.h"
 
-/*
+
 #define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
-#define free( x ) myfree( x, __FILE__, __LINE__ ) */
+#define free( x ) myfree( x, __FILE__, __LINE__ )
 
 int main()
 {
@@ -93,13 +93,13 @@ int main()
 		gettimeofday(&start, NULL);
 		int m = 0;
 		int f = 0;
-		int max = 15000;
+		int max = 14996;
 		int sizes[3000];
 		for(i = 0; i < 6000; i++) {
-			if(m != 3000 && f != m && max != 0) {
+			if(m != 3000 && f != m && max > 3) {
 				int a = rand() % 2;
 				if(a == 0) {
-					a = rand() % max;
+					a = rand() % (max - 2);
 					temp1[m - f] = malloc(a);
 					sizes[m - f] = a;
 					max -= 2 + a;
@@ -112,14 +112,14 @@ int main()
 					sizes[m - f] = 0;
 				}
 			}
-			else if(m == 3000 || max == 0) {
+			else if(m == 3000 || max <= 3) {
 				f++;
 				free(temp1[m - f]);
 				max += 2 + sizes[m - f];
 				sizes[m - f] = 0;
 			}
 			else {
-				int a = rand() % max;
+				int a = rand() % (max - 2);
 				temp1[m - f] = malloc(a);
 				sizes[m - f] = a;
 				max -= 2 + a;
@@ -140,7 +140,27 @@ int main()
 		gettimeofday(&start, NULL);
 
 		//stuff
-		
+		int m = 0;
+		int f = 0;
+		int max = 5000;
+		int sizes[3000];
+		while(m < 3000) {
+			while(m < 3000 && max > 5) {
+				int a = rand() % (max - 4);
+				temp1[m - f] = malloc(a);
+				sizes[m - f] = a;
+				max -= a;
+				max -= 2; 
+				m++;
+			}
+			while(m < 3000 && f != m)
+			{
+				f++;
+				free(temp1[m - f]);
+				max += 2 + sizes[m - f];
+				sizes[m - f] = 0;
+			}
+		}
 		gettimeofday(&end, NULL);
 		long int t = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
 		//printf("Time : %ld\n", t);
@@ -150,19 +170,29 @@ int main()
 	printf("Test 5 successful!\nAverage time: %ld microseconds\n\n", avg);
 
 	/* test 6 */
-	avg = 0;
+/*	avg = 0;
 	for(j = 0; j < 100; j++) {
 		gettimeofday(&start, NULL);
-
-		//stuff
+		int max = 5000;
+		for(i = 0; i < 1500; i++)
+		{
+			int a = rand() % (max - 2);
+			void * p1 = malloc(a);
+			int b = rand() % (max - 2);
+			void * p2 = malloc(b);
+			if(p1 != NULL)
+				free(p1);
+			if(p2 != NULL)
+				free(p2);
+		}
 		
 		gettimeofday(&end, NULL);
 		long int t = ((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec));
-		//printf("Time : %ld\n", t);
+		printf("Time : %ld\n", t);
 		avg += t;
 	}
 	avg /= 100;
 	printf("Test 6 successful!\nAverage time: %ld microseconds\n\n", avg);
-
+*/
 	return 0;
 }
