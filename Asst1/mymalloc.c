@@ -31,14 +31,23 @@ void addBlock(uint16_t pos, uint16_t newSize, block_type isFree) {
 }
 
 uint16_t getLength(uint16_t pos) {
+	if (pos > BLOCK_SIZE - HEADER_SIZE) {
+		return BLOCK_SIZE - pos;
+	}
 	return (getValueFromIndex(pos) & 0x3fff);
 }
 
 uint16_t getSize(uint16_t pos) {
+	if (pos > BLOCK_SIZE - HEADER_SIZE) {
+		return 0;
+	}
 	return getLength(pos) - HEADER_SIZE;
 }
 
 bool isType(uint16_t pos, block_type type) {
+	if (pos > BLOCK_SIZE - HEADER_SIZE) {
+		return type == FREE;
+	}
 	return ((getValueFromIndex(pos) >> 15) & 1) == type;
 }
 
@@ -78,8 +87,12 @@ void *mymalloc(int size, char *fileName, int lineNum) {
 	uint16_t nextPos = getNextBlockOfType(currPos, FREE);
 	uint16_t origPos = currPos;
 
-	if (currPos == NULL_VALUE) {
+	if (currPos == NULL_VALUE || currPos > BLOCK_SIZE - HEADER_SIZE) {
 		printError("No free blocks available.", fileName, lineNum);
+		return NULL;
+	}
+
+	if (size == 0) {
 		return NULL;
 	}
 
@@ -109,7 +122,12 @@ void *mymalloc(int size, char *fileName, int lineNum) {
 		}
 	} else {
 		// need to split, edit old block
-		addBlock(currPos + getLength(currPos), currSize - getLength(currPos), FREE);
+		// make sure size is always above 0 (else bad things happen)
+		if (currSize > getLength(currPos)) {
+			addBlock(currPos + getLength(currPos), currSize - getLength(currPos), FREE);
+		} else {
+			addBlock(currPos + getLength(currPos), 0, FREE);			
+		}
 		setStartAddress(currPos + getLength(currPos));
 	}
 
